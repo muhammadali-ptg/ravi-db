@@ -117,67 +117,66 @@ backoff, honouring `Retry-After`.
 To iterate on the report without re-hitting the API, run with `--cache`.
 For a quick pipeline-shape check, `--no-calls` cuts almost all the traffic.
 
-## Deploying on a server (CloudPanel and similar)
+## Publishing the dashboard on a web host
 
-This is a CLI that writes files, not a web service — there is nothing to keep
-running. On a server you schedule the report and let the web server serve the
-HTML it produces.
+The dashboard is a **single self-contained HTML file** — no external assets, no
+CDN, no runtime. Any web host will serve it, including a PHP-only site: it is
+just a static file. Nothing from this repo needs to run on the server.
 
-**The dashboard contains customer PII.** Names, email addresses and phone
-numbers for everyone in the pipeline are in the HTML, the CSV and the JSON.
-Anyone who can reach the URL can read all of it, and an unlisted or
-hard-to-guess path is not access control. Put the site behind CloudPanel's
-**Basic Auth** (Site → Security → Basic Auth), or restrict it by IP, before you
-point a domain at it.
+> **The dashboard contains customer PII.** Names, email addresses and phone
+> numbers for everyone in the pipeline are in the HTML (and in the CSV and JSON
+> if you upload those too). Anyone who reaches the URL can read all of it, and
+> an unlisted or hard-to-guess path is not access control. Put the site behind
+> **Basic Auth** (in CloudPanel: Site → Security → Basic Auth) or restrict it by
+> IP before pointing a domain at it.
 
-A working setup:
+### The simple path: generate locally, upload the file
 
-1. **Create a Node.js site** in CloudPanel and pick **Node 20.12 or newer**
-   (older versions cannot read the `.env` file). Note the site user and its
-   home directory, e.g. `/home/ravi-db`.
-
-2. **Clone the repo** as the site user, outside the document root:
+1. Run the report on any machine with Node 20.12+:
 
    ```bash
-   cd /home/ravi-db
-   git clone -b claude/ghl-calls-forms-dashboard-jqeru1 \
-     https://github.com/muhammadali-ptg/ravi-db.git app
-   cd app
-   cp .env.example .env && chmod 600 .env    # then fill in token + location id
+   node bin/ghl-report.js report --pipeline "Sales Pipeline"
    ```
 
-   Keep `app/` **out of** `htdocs/`. The `.env` holds an API token with read
-   access to the whole sub-account; it must never be reachable over HTTP.
+2. Upload **`out/<pipeline-slug>.html`** into the site's document root
+   (`htdocs/`) with CloudPanel's File Manager, SFTP, or any FTP client. Rename it
+   to `index.html` if you want it at the domain root.
 
-3. **Write the dashboard into the document root** by pointing `--out` at it:
+3. Re-run and re-upload whenever you want fresh numbers.
 
-   ```bash
-   node bin/ghl-report.js report --pipeline "Sales Pipeline" \
-     --out /home/ravi-db/htdocs/<your-domain>
-   ```
+Upload the `.csv` and `.json` only if you actually want them downloadable — they
+carry the same personal data as the HTML.
 
-   Only the generated `.html`, `.csv` and `.json` land there — no source, no
-   `.env`. If you would rather not expose the raw data files, write to a
-   staging directory and copy just the `.html` across.
+### If you want it to refresh by itself
 
-4. **Schedule it** under Site → Cron Jobs. Hourly, quiet, with output logged:
+That needs Node **on the server**, which a PHP-only site does not have. On a
+CloudPanel Node.js site (Node 20.12 or newer — older versions cannot read
+`.env`):
 
-   ```
-   0 * * * * cd /home/ravi-db/app && /usr/bin/node bin/ghl-report.js report \
-     --pipeline "Sales Pipeline" --out /home/ravi-db/htdocs/<your-domain> \
-     --quiet >> /home/ravi-db/logs/report.log 2>&1
-   ```
+```bash
+cd /home/<site-user>
+git clone -b claude/ghl-calls-forms-dashboard-jqeru1 \
+  https://github.com/muhammadali-ptg/ravi-db.git app
+cd app && cp .env.example .env && chmod 600 .env
+```
 
-   Use the absolute path to the Node binary CloudPanel installed — cron does not
-   inherit your shell's PATH, and `node: command not found` is the usual first
-   failure. `which node` as the site user gives you the right path.
+Keep `app/` **outside** `htdocs/`. The `.env` holds an API token with read
+access to the whole sub-account and must never be reachable over HTTP. Then
+point `--out` at the document root so only generated files land there, and
+schedule it under Site → Cron Jobs:
 
-5. **Check the log after the first run.** A 401 means the token is wrong or
-   belongs to another location; a 403 means it is missing a scope (see the table
-   above). Both are reported in plain language rather than a stack trace.
+```
+0 * * * * cd /home/<site-user>/app && /usr/bin/node bin/ghl-report.js report \
+  --pipeline "Sales Pipeline" --out /home/<site-user>/htdocs/<domain> \
+  --quiet >> /home/<site-user>/logs/report.log 2>&1
+```
 
-Because the run is a plain cron job, `git pull` is the whole update path — there
-is no build step, no `npm install`, and no process to restart.
+Use the absolute path to the Node binary — cron does not inherit your shell's
+PATH, and `node: command not found` is the usual first failure. `which node` as
+the site user gives you the right path. Check the log after the first run: a 401
+means the token is wrong or belongs to another location, a 403 means it is
+missing a scope. Updates are then just `git pull` — no build step, no
+`npm install`, nothing to restart.
 
 ## Layout
 
