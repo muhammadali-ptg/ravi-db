@@ -117,6 +117,68 @@ backoff, honouring `Retry-After`.
 To iterate on the report without re-hitting the API, run with `--cache`.
 For a quick pipeline-shape check, `--no-calls` cuts almost all the traffic.
 
+## Deploying on a server (CloudPanel and similar)
+
+This is a CLI that writes files, not a web service — there is nothing to keep
+running. On a server you schedule the report and let the web server serve the
+HTML it produces.
+
+**The dashboard contains customer PII.** Names, email addresses and phone
+numbers for everyone in the pipeline are in the HTML, the CSV and the JSON.
+Anyone who can reach the URL can read all of it, and an unlisted or
+hard-to-guess path is not access control. Put the site behind CloudPanel's
+**Basic Auth** (Site → Security → Basic Auth), or restrict it by IP, before you
+point a domain at it.
+
+A working setup:
+
+1. **Create a Node.js site** in CloudPanel and pick **Node 20.12 or newer**
+   (older versions cannot read the `.env` file). Note the site user and its
+   home directory, e.g. `/home/ravi-db`.
+
+2. **Clone the repo** as the site user, outside the document root:
+
+   ```bash
+   cd /home/ravi-db
+   git clone -b claude/ghl-calls-forms-dashboard-jqeru1 \
+     https://github.com/muhammadali-ptg/ravi-db.git app
+   cd app
+   cp .env.example .env && chmod 600 .env    # then fill in token + location id
+   ```
+
+   Keep `app/` **out of** `htdocs/`. The `.env` holds an API token with read
+   access to the whole sub-account; it must never be reachable over HTTP.
+
+3. **Write the dashboard into the document root** by pointing `--out` at it:
+
+   ```bash
+   node bin/ghl-report.js report --pipeline "Sales Pipeline" \
+     --out /home/ravi-db/htdocs/<your-domain>
+   ```
+
+   Only the generated `.html`, `.csv` and `.json` land there — no source, no
+   `.env`. If you would rather not expose the raw data files, write to a
+   staging directory and copy just the `.html` across.
+
+4. **Schedule it** under Site → Cron Jobs. Hourly, quiet, with output logged:
+
+   ```
+   0 * * * * cd /home/ravi-db/app && /usr/bin/node bin/ghl-report.js report \
+     --pipeline "Sales Pipeline" --out /home/ravi-db/htdocs/<your-domain> \
+     --quiet >> /home/ravi-db/logs/report.log 2>&1
+   ```
+
+   Use the absolute path to the Node binary CloudPanel installed — cron does not
+   inherit your shell's PATH, and `node: command not found` is the usual first
+   failure. `which node` as the site user gives you the right path.
+
+5. **Check the log after the first run.** A 401 means the token is wrong or
+   belongs to another location; a 403 means it is missing a scope (see the table
+   above). Both are reported in plain language rather than a stack trace.
+
+Because the run is a plain cron job, `git pull` is the whole update path — there
+is no build step, no `npm install`, and no process to restart.
+
 ## Layout
 
 ```
