@@ -1,0 +1,24 @@
+{
+  "name": "ravi-db",
+  "version": "1.0.0",
+  "description": "GoHighLevel pipeline dashboard: inbound/outbound calls, form submissions and lead source per opportunity.",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.6.0"
+  },
+  "bin": {
+    "ghl-report": "./bin/ghl-report.js"
+  },
+  "scripts": {
+    "report": "node bin/ghl-report.js report",
+    "pipelines": "node bin/ghl-report.js pipelines",
+    "demo": "node scripts/demo.js",
+    "test": "node --test test/*.test.js"
+  },
+  "files": [
+    "bin",
+    "src",
+    "README.md"
+  ]
+}

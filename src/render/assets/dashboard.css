@@ -1,0 +1,162 @@
+/* Palette roles. Dark values are selected steps for the dark surface, declared
+   under both the OS media query and the explicit theme stamp. */
+:root {
+  color-scheme: light;
+  --page: #f9f9f7;
+  --surface: #fcfcfb;
+  --ink: #0b0b0b;
+  --ink-2: #52514e;
+  --muted: #898781;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --border: rgba(11, 11, 11, 0.1);
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --good: #0ca30c;
+  --track: rgba(11, 11, 11, 0.05);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --ink: #ffffff;
+    --ink-2: #c3c2b7;
+    --muted: #898781;
+    --grid: #2c2c2a;
+    --axis: #383835;
+    --border: rgba(255, 255, 255, 0.1);
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --good: #0ca30c;
+    --track: rgba(255, 255, 255, 0.07);
+  }
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --page: #0d0d0d;
+  --surface: #1a1a19;
+  --ink: #ffffff;
+  --ink-2: #c3c2b7;
+  --muted: #898781;
+  --grid: #2c2c2a;
+  --axis: #383835;
+  --border: rgba(255, 255, 255, 0.1);
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --good: #0ca30c;
+  --track: rgba(255, 255, 255, 0.07);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--page);
+  color: var(--ink);
+  font: 14px/1.5 system-ui, -apple-system, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap { max-width: 1180px; margin: 0 auto; padding: 32px 20px 64px; }
+
+header.page { margin-bottom: 24px; }
+header.page h1 { margin: 0 0 6px; font-size: 22px; font-weight: 650; letter-spacing: -0.01em; }
+header.page .sub { color: var(--ink-2); font-size: 13px; }
+header.page .sub span + span::before { content: '·'; margin: 0 8px; color: var(--muted); }
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.tile {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px 18px;
+}
+.tile .label { color: var(--ink-2); font-size: 12px; font-weight: 500; }
+.tile .value { margin-top: 6px; font-size: 30px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.1; }
+.tile .foot { margin-top: 6px; color: var(--muted); font-size: 12px; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 20px 20px;
+  margin-bottom: 20px;
+}
+.card > h2 { margin: 0 0 2px; font-size: 15px; font-weight: 600; }
+.card > .hint { margin: 0 0 16px; color: var(--muted); font-size: 12px; }
+
+.grid-2 { display: grid; grid-template-columns: 1fr; gap: 20px; }
+@media (min-width: 900px) { .grid-2 { grid-template-columns: 1fr 1fr; } .grid-2 .card { margin-bottom: 0; } }
+
+.legend { display: flex; gap: 16px; margin-bottom: 14px; font-size: 12px; color: var(--ink-2); }
+.legend .item { display: inline-flex; align-items: center; gap: 6px; }
+.legend .swatch { width: 10px; height: 10px; border-radius: 3px; }
+
+/* Horizontal bars. Rows are grid so every label column lines up. */
+.bars { display: grid; gap: 10px; }
+.bar-row { display: grid; grid-template-columns: minmax(90px, 150px) 1fr auto; gap: 12px; align-items: center; }
+.bar-row .name {
+  color: var(--ink-2); font-size: 12px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.bar-row .val { color: var(--ink); font-size: 12px; font-variant-numeric: tabular-nums; min-width: 34px; text-align: right; }
+.track { background: var(--track); border-radius: 4px; overflow: hidden; }
+.single .track { height: 12px; }
+.fill { height: 100%; border-radius: 4px; min-width: 2px; }
+.fill.s1 { background: var(--series-1); }
+.fill.s2 { background: var(--series-2); }
+/* Grouped pair: a 2px surface gap keeps the two fills from touching. */
+.group { display: grid; gap: 2px; }
+.group .track { height: 9px; }
+
+.empty { color: var(--muted); font-size: 13px; padding: 8px 0; }
+
+.controls { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+.controls input, .controls select {
+  font: inherit; font-size: 13px;
+  color: var(--ink); background: var(--surface);
+  border: 1px solid var(--border); border-radius: 8px;
+  padding: 7px 10px; min-width: 150px;
+}
+.controls input { flex: 1 1 220px; }
+
+.table-scroll { overflow: auto; max-height: 620px; }
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+th {
+  position: sticky; top: 0; z-index: 1;
+  background: var(--surface); color: var(--ink-2);
+  font-weight: 600; font-size: 12px; cursor: pointer; user-select: none;
+  border-bottom: 1px solid var(--axis);
+}
+th[aria-sort='ascending']::after { content: ' ▲'; color: var(--muted); }
+th[aria-sort='descending']::after { content: ' ▼'; color: var(--muted); }
+td.num { text-align: right; font-variant-numeric: tabular-nums; }
+tbody tr:hover { background: var(--track); }
+.tag {
+  display: inline-block; padding: 1px 7px; border-radius: 999px;
+  border: 1px solid var(--border); color: var(--ink-2); font-size: 11px;
+}
+.status-won { color: var(--good); font-weight: 600; }
+
+.count { color: var(--muted); font-size: 12px; margin-top: 10px; }
+
+#tip {
+  position: fixed; z-index: 50; pointer-events: none; opacity: 0;
+  transition: opacity 90ms linear;
+  background: var(--surface); color: var(--ink);
+  border: 1px solid var(--border); border-radius: 8px;
+  padding: 7px 10px; font-size: 12px; line-height: 1.45;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.16);
+  max-width: 280px;
+}
+#tip strong { font-weight: 600; }
+#tip .row { color: var(--ink-2); font-variant-numeric: tabular-nums; }
+
+footer.page { color: var(--muted); font-size: 12px; margin-top: 28px; }
